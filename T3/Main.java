@@ -8,35 +8,32 @@ public class Main {
 
         Digraph digraph = new Digraph(in);
 
-        System.out.println("=== Grau dos Vértices ===");
+        System.out.println("=== Grau dos vértices ===");
 
         boolean balanceado = true;
 
         for (int v = 0; v < digraph.V(); v++) {
 
-            int entrada = digraph.indegree(v);
-            int saida = digraph.outdegree(v);
+            int inDegree = digraph.indegree(v);
+            int outDegree = digraph.outdegree(v);
 
             System.out.println(
-                    v +
-                            " -> Entrada: " + entrada +
-                            " | Saída: " + saida
+                    v + " -> Entrada: " + inDegree +
+                            " | Saída: " + outDegree
             );
 
-            if (entrada != saida)
+            if (inDegree != outDegree)
                 balanceado = false;
         }
 
         System.out.println();
 
         if (balanceado)
-            System.out.println("Grafo está balanceado");
+            System.out.println("Grafo Balanceado");
         else
-            System.out.println("Grafo NÃO está balanceado");
-
+            System.out.println("Grafo NÃO Balanceado");
 
         System.out.println();
-        System.out.println("=== Método de Hierholzer ===");
 
         DirectedEulerianCycle euler =
                 new DirectedEulerianCycle(digraph);
@@ -48,9 +45,22 @@ public class Main {
 
         System.out.println("Circuito Euleriano:");
 
-        for (int v : euler.cycle())
+        double custoTotal = 0;
+
+        int anterior = -1;
+
+        for (int v : euler.cycle()) {
+
             System.out.print(v + " ");
 
+            if (anterior != -1)
+                custoTotal += digraph.getPeso(anterior, v);
+
+            anterior = v;
+        }
+
         System.out.println();
+        System.out.println();
+        System.out.println("Custo Total = " + custoTotal);
     }
 }
