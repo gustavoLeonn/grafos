@@ -1,93 +1,86 @@
 package edu.princeton.cs.algs4;
 
 import java.util.NoSuchElementException;
+import java.util.HashMap;
 
 public class Digraph {
     private static final String NEWLINE = System.getProperty("line.separator");
 
-    private final int V;           // number of vertices in this digraph
-    private int E;                 // number of edges in this digraph
-    private Bag<Integer>[] adj;    // adj[v] = adjacency list for vertex v
-    private int[] indegree;        // indegree[v] = indegree of vertex v
+    private final int V;
+    private int E;
+    private Bag<Integer>[] adj;
+    private int[] indegree;
+
+    // NOVO — armazenar pesos
+    private HashMap<String, Queue<Double>> pesos;
 
     public Digraph(int V) {
-        if (V < 0) throw new IllegalArgumentException("Number of vertices in a Digraph must be non-negative");
+        if (V < 0) throw new IllegalArgumentException("Number of vertices must be non-negative");
         this.V = V;
         this.E = 0;
+
         indegree = new int[V];
         adj = (Bag<Integer>[]) new Bag[V];
-        for (int v = 0; v < V; v++) {
+
+        for (int v = 0; v < V; v++)
             adj[v] = new Bag<Integer>();
-        }
+
+        pesos = new HashMap<>();
     }
 
+    // CONSTRUTOR ALTERADO
     public Digraph(In in) {
+
         if (in == null) throw new IllegalArgumentException("argument is null");
+
         try {
+
             this.V = in.readInt();
-            if (V < 0) throw new IllegalArgumentException("number of vertices in a Digraph must be non-negative");
             indegree = new int[V];
             adj = (Bag<Integer>[]) new Bag[V];
-            for (int v = 0; v < V; v++) {
+
+            for (int v = 0; v < V; v++)
                 adj[v] = new Bag<Integer>();
-            }
+
+            pesos = new HashMap<>();
+
             int E = in.readInt();
-            if (E < 0) throw new IllegalArgumentException("number of edges in a Digraph must be non-negative");
+
             for (int i = 0; i < E; i++) {
+
                 int v = in.readInt();
                 int w = in.readInt();
+                double peso = in.readDouble();   // LENDO PESO
+
                 addEdge(v, w);
+
+                String key = v + "-" + w;
+
+                if (!pesos.containsKey(key))
+                    pesos.put(key, new Queue<Double>());
+
+                pesos.get(key).enqueue(peso);
             }
-        }
-        catch (NoSuchElementException e) {
-            throw new IllegalArgumentException("invalid input format in Digraph constructor", e);
-        }
-    }
 
-    public Digraph(Digraph digraph) {
-        if (digraph == null) throw new IllegalArgumentException("argument is null");
-
-        this.V = digraph.V();
-        this.E = digraph.E();
-        if (V < 0) throw new IllegalArgumentException("Number of vertices in a Digraph must be non-negative");
-
-        // update indegrees
-        indegree = new int[V];
-        for (int v = 0; v < V; v++)
-            this.indegree[v] = digraph.indegree(v);
-
-        adj = (Bag<Integer>[]) new Bag[V];
-        for (int v = 0; v < V; v++) {
-            adj[v] = new Bag<Integer>();
-        }
-
-        for (int v = 0; v < digraph.V(); v++) {
-            Stack<Integer> reverse = new Stack<Integer>();
-            for (int w : digraph.adj[v]) {
-                reverse.push(w);
-            }
-            for (int w : reverse) {
-                adj[v].add(w);
-            }
+        } catch (NoSuchElementException e) {
+            throw new IllegalArgumentException("invalid input format", e);
         }
     }
 
-    public int V() {
-        return V;
-    }
+    public int V() { return V; }
 
-    public int E() {
-        return E;
-    }
+    public int E() { return E; }
 
     private void validateVertex(int v) {
         if (v < 0 || v >= V)
-            throw new IllegalArgumentException("vertex " + v + " is not between 0 and " + (V-1));
+            throw new IllegalArgumentException(
+                    "vertex " + v + " is not between 0 and " + (V-1));
     }
 
     public void addEdge(int v, int w) {
         validateVertex(v);
         validateVertex(w);
+
         adj[v].add(w);
         indegree[w]++;
         E++;
@@ -108,40 +101,30 @@ public class Digraph {
         return indegree[v];
     }
 
-    public Digraph reverse() {
-        Digraph reverse = new Digraph(V);
-        for (int v = 0; v < V; v++) {
-            for (int w : adj(v)) {
-                reverse.addEdge(w, v);
-            }
-        }
-        return reverse;
+    // NOVO — pegar peso da aresta
+    public double getPeso(int v, int w) {
+
+        String key = v + "-" + w;
+
+        if (!pesos.containsKey(key))
+            return 0;
+
+        return pesos.get(key).dequeue();
     }
 
     public String toString() {
+
         StringBuilder s = new StringBuilder();
+
         s.append(V + " vertices, " + E + " edges " + NEWLINE);
+
         for (int v = 0; v < V; v++) {
-            s.append(String.format("%d: ", v));
-            for (int w : adj[v]) {
-                s.append(String.format("%d ", w));
-            }
+            s.append(v + ": ");
+            for (int w : adj[v])
+                s.append(w + " ");
             s.append(NEWLINE);
         }
-        return s.toString();
-    }
 
-    public String toDot() {
-        StringBuilder s = new StringBuilder();
-        s.append("digraph {" + NEWLINE);
-        s.append("node[shape=circle, style=filled, fixedsize=true, width=0.3, fontsize=\"10pt\"]" + NEWLINE);
-        s.append("edge[arrowhead=normal]" + NEWLINE);
-        for (int v = 0; v < V; v++) {
-            for (int w : adj[v]) {
-                s.append(v + " -> " + w + NEWLINE);
-            }
-        }
-        s.append("}" + NEWLINE);
         return s.toString();
     }
 }
