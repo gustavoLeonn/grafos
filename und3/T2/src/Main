@@ -1,0 +1,147 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static class Edge {
+        int to, cost;
+        boolean removed;
+
+        Edge(int to, int cost) {
+            this.to = to;
+            this.cost = cost;
+            this.removed = false;
+        }
+    }
+
+    static class Node implements Comparable<Node> {
+        int v, dist;
+
+        Node(int v, int dist) {
+            this.v = v;
+            this.dist = dist;
+        }
+
+        public int compareTo(Node o) {
+            return this.dist - o.dist;
+        }
+    }
+
+    static final int INF = (int) 1e9;
+    static ArrayList<Edge>[] graph;
+    static ArrayList<Integer>[] parent;
+    static int[] dist;
+
+    static int n, m;
+
+    // Dijkstra padrão
+    static void dijkstra(int start) {
+        dist = new int[n];
+        Arrays.fill(dist, INF);
+
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+        pq.add(new Node(start, 0));
+        dist[start] = 0;
+
+        while (!pq.isEmpty()) {
+            Node cur = pq.poll();
+
+            if (cur.dist > dist[cur.v]) continue;
+
+            for (Edge e : graph[cur.v]) {
+                if (e.removed) continue;
+
+                int nd = cur.dist + e.cost;
+
+                if (nd < dist[e.to]) {
+                    dist[e.to] = nd;
+                    pq.add(new Node(e.to, nd));
+
+                    parent[e.to].clear();
+                    parent[e.to].add(cur.v);
+
+                } else if (nd == dist[e.to]) {
+                    parent[e.to].add(cur.v);
+                }
+            }
+        }
+    }
+
+    // Marca todas as arestas do menor caminho
+    static void removeShortestPaths(int end) {
+        Queue<Integer> q = new LinkedList<>();
+        boolean[] visited = new boolean[n];
+
+        q.add(end);
+
+        while (!q.isEmpty()) {
+            int cur = q.poll();
+
+            if (visited[cur]) continue;
+            visited[cur] = true;
+
+            for (int p : parent[cur]) {
+                // remove aresta p -> cur
+                for (Edge e : graph[p]) {
+                    if (e.to == cur && dist[cur] == dist[p] + e.cost) {
+                        e.removed = true;
+                    }
+                }
+                q.add(p);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        StringBuilder sb = new StringBuilder();
+
+        while (true) {
+            StringTokenizer st = new StringTokenizer(br.readLine());
+            n = Integer.parseInt(st.nextToken());
+            m = Integer.parseInt(st.nextToken());
+
+            if (n == 0 && m == 0) break;
+
+            graph = new ArrayList[n];
+            parent = new ArrayList[n];
+
+            for (int i = 0; i < n; i++) {
+                graph[i] = new ArrayList<>();
+                parent[i] = new ArrayList<>();
+            }
+
+            st = new StringTokenizer(br.readLine());
+            int S = Integer.parseInt(st.nextToken());
+            int D = Integer.parseInt(st.nextToken());
+
+            for (int i = 0; i < m; i++) {
+                st = new StringTokenizer(br.readLine());
+                int u = Integer.parseInt(st.nextToken());
+                int v = Integer.parseInt(st.nextToken());
+                int w = Integer.parseInt(st.nextToken());
+
+                graph[u].add(new Edge(v, w));
+            }
+
+            // 1º Dijkstra
+            dijkstra(S);
+
+            if (dist[D] == INF) {
+                sb.append("-1\n");
+                continue;
+            }
+
+            // remove caminhos mínimos
+            removeShortestPaths(D);
+
+            // 2º Dijkstra
+            dijkstra(S);
+
+            sb.append(dist[D] == INF ? -1 : dist[D]).append("\n");
+        }
+
+        System.out.print(sb);
+    }
+}
