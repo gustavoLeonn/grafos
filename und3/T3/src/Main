@@ -1,0 +1,157 @@
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static class Edge {
+        int to, rev, cap, originalCap;
+
+        Edge(int to, int rev, int cap) {
+            this.to = to;
+            this.rev = rev;
+            this.cap = cap;
+            this.originalCap = cap;
+        }
+    }
+
+    static ArrayList<Edge>[] graph;
+
+    static void addEdge(int u, int v, int cap) {
+        Edge a = new Edge(v, graph[v].size(), cap);
+        Edge b = new Edge(u, graph[u].size(), 0);
+
+        graph[u].add(a);
+        graph[v].add(b);
+    }
+
+    static int maxFlow(int s, int t, int n) {
+        int flow = 0;
+
+        while (true) {
+            Edge[] parentEdge = new Edge[n];
+            int[] parent = new int[n];
+            Arrays.fill(parent, -1);
+
+            Queue<Integer> q = new LinkedList<>();
+            q.add(s);
+            parent[s] = s;
+
+            while (!q.isEmpty() && parent[t] == -1) {
+                int u = q.poll();
+
+                for (Edge e : graph[u]) {
+                    if (parent[e.to] == -1 && e.cap > 0) {
+                        parent[e.to] = u;
+                        parentEdge[e.to] = e;
+                        q.add(e.to);
+
+                        if (e.to == t)
+                            break;
+                    }
+                }
+            }
+
+            if (parent[t] == -1)
+                break;
+
+            int aug = Integer.MAX_VALUE;
+
+            for (int v = t; v != s; v = parent[v])
+                aug = Math.min(aug, parentEdge[v].cap);
+
+            for (int v = t; v != s; v = parent[v]) {
+                Edge e = parentEdge[v];
+                e.cap -= aug;
+                graph[e.to].get(e.rev).cap += aug;
+            }
+
+            flow += aug;
+        }
+
+        return flow;
+    }
+
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        while (true) {
+            StringTokenizer st = new StringTokenizer(br.readLine());
+
+            int nk = Integer.parseInt(st.nextToken());
+            int np = Integer.parseInt(st.nextToken());
+
+            if (nk == 0 && np == 0)
+                break;
+
+            int source = 0;
+            int firstCategory = 1;
+            int firstProblem = firstCategory + nk;
+            int sink = firstProblem + np;
+            int totalNodes = sink + 1;
+
+            graph = new ArrayList[totalNodes];
+            for (int i = 0; i < totalNodes; i++)
+                graph[i] = new ArrayList<>();
+
+            st = new StringTokenizer(br.readLine());
+
+            int required = 0;
+
+            for (int i = 1; i <= nk; i++) {
+                int need = Integer.parseInt(st.nextToken());
+                required += need;
+
+                addEdge(source, firstCategory + i - 1, need);
+            }
+
+            for (int p = 1; p <= np; p++) {
+                st = new StringTokenizer(br.readLine());
+
+                int cnt = Integer.parseInt(st.nextToken());
+
+                int problemNode = firstProblem + p - 1;
+
+                addEdge(problemNode, sink, 1);
+
+                for (int j = 0; j < cnt; j++) {
+                    int cat = Integer.parseInt(st.nextToken());
+
+                    addEdge(firstCategory + cat - 1, problemNode, 1);
+                }
+            }
+
+            int flow = maxFlow(source, sink, totalNodes);
+
+            if (flow != required) {
+                System.out.println(0);
+                continue;
+            }
+
+            System.out.println(1);
+
+            for (int cat = 1; cat <= nk; cat++) {
+                ArrayList<Integer> ans = new ArrayList<>();
+
+                int categoryNode = firstCategory + cat - 1;
+
+                for (Edge e : graph[categoryNode]) {
+
+                    if (e.to >= firstProblem && e.to < sink &&
+                        e.originalCap == 1 && e.cap == 0) {
+
+                        int problemNumber = e.to - firstProblem + 1;
+                        ans.add(problemNumber);
+                    }
+                }
+
+                for (int i = 0; i < ans.size(); i++) {
+                    if (i > 0)
+                        System.out.print(" ");
+                    System.out.print(ans.get(i));
+                }
+
+                System.out.println();
+            }
+        }
+    }
+}
